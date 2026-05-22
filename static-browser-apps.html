@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Zone App</title>
+    <style>
+        :root {
+            --bg: #111827;
+            --panel: #ffffff;
+            --panel-soft: #f3f4f6;
+            --text: #111827;
+            --muted: #6b7280;
+            --accent: #0ea5e9;
+            --accent-dark: #0369a1;
+            --line: #d1d5db;
+            --ok: #16a34a;
+            --warn: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.24), transparent 32rem),
+                linear-gradient(135deg, #111827, #1f2937 48%, #0f172a);
+            color: var(--text);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        button,
+        input,
+        textarea,
+        select {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            border-radius: 6px;
+            background: var(--accent);
+            color: #fff;
+            cursor: pointer;
+            font-weight: 700;
+            padding: 0.7rem 1rem;
+        }
+
+        button:hover {
+            background: var(--accent-dark);
+        }
+
+        button.secondary {
+            background: #e5e7eb;
+            color: var(--text);
+        }
+
+        main {
+            width: min(1080px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 32px 0;
+        }
+
+        .shell {
+            background: var(--panel);
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            border-radius: 8px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+            overflow: hidden;
+        }
+
+        .hero {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--line);
+            padding: 24px;
+        }
+
+        h1,
+        h2,
+        h3,
+        p {
+            margin-top: 0;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 0;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid.two {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid.three {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .card {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .metric {
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0.25rem 0;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .stack {
+            display: grid;
+            gap: 12px;
+        }
+
+        .row {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        input,
+        textarea,
+        select {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 0.7rem 0.85rem;
+            width: 100%;
+        }
+
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+        }
+
+        .result {
+            border-left: 4px solid var(--accent);
+            background: #eef6ff;
+            padding: 12px 14px;
+        }
+
+        .scramble-word {
+            font-size: clamp(2rem, 8vw, 4rem);
+            font-weight: 900;
+            letter-spacing: 0.25rem;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .task-item,
+        .cart-item,
+        .news-item {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .task-item.done span {
+            color: var(--muted);
+            text-decoration: line-through;
+        }
+
+        .bar {
+            background: #dbeafe;
+            border-radius: 999px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .bar span {
+            background: var(--accent);
+            display: block;
+            height: 100%;
+        }
+
+        .profile-card {
+            background: linear-gradient(135deg, #0ea5e9, #22c55e);
+            color: #fff;
+            min-height: 280px;
+        }
+
+        .avatar {
+            align-items: center;
+            background: rgba(255, 255, 255, 0.22);
+            border-radius: 50%;
+            display: flex;
+            font-size: 3rem;
+            font-weight: 900;
+            height: 96px;
+            justify-content: center;
+            width: 96px;
+        }
+
+        .cube-wrap {
+            height: 220px;
+            perspective: 800px;
+            display: grid;
+            place-items: center;
+        }
+
+        .cube {
+            animation: spin 8s linear infinite;
+            height: 120px;
+            position: relative;
+            transform-style: preserve-3d;
+            width: 120px;
+        }
+
+        .cube span {
+            align-items: center;
+            background: rgba(14, 165, 233, 0.86);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: #fff;
+            display: flex;
+            font-weight: 800;
+            height: 120px;
+            justify-content: center;
+            position: absolute;
+            width: 120px;
+        }
+
+        .cube span:nth-child(1) { transform: rotateY(0deg) translateZ(60px); }
+        .cube span:nth-child(2) { transform: rotateY(90deg) translateZ(60px); }
+        .cube span:nth-child(3) { transform: rotateY(180deg) translateZ(60px); }
+        .cube span:nth-child(4) { transform: rotateY(270deg) translateZ(60px); }
+        .cube span:nth-child(5) { transform: rotateX(90deg) translateZ(60px); }
+        .cube span:nth-child(6) { transform: rotateX(-90deg) translateZ(60px); }
+
+        video {
+            background: #0f172a;
+            border-radius: 8px;
+            min-height: 260px;
+            width: 100%;
+        }
+
+        @keyframes spin {
+            from { transform: rotateX(-18deg) rotateY(0deg); }
+            to { transform: rotateX(-18deg) rotateY(360deg); }
+        }
+
+        @media (max-width: 760px) {
+            .grid.two,
+            .grid.three {
+                grid-template-columns: 1fr;
+            }
+
+            .content,
+            .hero {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main id="app"></main>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const appName = params.get('app') || 'word-scramble';
+        const app = document.getElementById('app');
+
+        function shell(title, subtitle, html) {
+            document.title = title;
+            app.innerHTML = `
+                <section class="shell">
+                    <div class="hero">
+                        <h1>${title}</h1>
+                        <p class="subtitle">${subtitle}</p>
+                    </div>
+                    <div class="content">${html}</div>
+                </section>
+            `;
+        }
+
+        function textAnalyzer() {
+            shell('Text Analyzer', 'Words, characters, sentences, and reading time.', `
+                <div class="grid two">
+                    <textarea id="textInput" placeholder="Paste or type text"></textarea>
+                    <div class="grid two">
+                        <div class="card"><p class="muted">Words</p><p class="metric" id="words">0</p></div>
+                        <div class="card"><p class="muted">Characters</p><p class="metric" id="chars">0</p></div>
+                        <div class="card"><p class="muted">Sentences</p><p class="metric" id="sentences">0</p></div>
+                        <div class="card"><p class="muted">Minutes</p><p class="metric" id="minutes">0</p></div>
+                    </div>
+                </div>
+            `);
+            const input = document.getElementById('textInput');
+            function update() {
+                const text = input.value.trim();
+                const words = text ? text.split(/\s+/).length : 0;
+                document.getElementById('words').textContent = words;
+                document.getElementById('chars').textContent = input.value.length;
+                document.getElementById('sentences').textContent = text ? (text.match(/[.!?]+/g) || ['']).length : 0;
+                document.getElementById('minutes').textContent = Math.max(0, Math.ceil(words / 225));
+            }
+            input.addEventListener('input', update);
+            update();
+        }
+
+        function adminDashboard() {
+            shell('Admin Dashboard', 'Operations snapshot for projects, users, and revenue.', `
+                <div class="grid three">
+                    <div class="card"><p class="muted">Users</p><p class="metric">12,480</p><div class="bar"><span style="width:78%"></span></div></div>
+                    <div class="card"><p class="muted">Projects</p><p class="metric">128</p><div class="bar"><span style="width:64%"></span></div></div>
+                    <div class="card"><p class="muted">Revenue</p><p class="metric">$42k</p><div class="bar"><span style="width:86%"></span></div></div>
+                </div>
+                <div class="grid two" style="margin-top:16px">
+                    <div class="card">
+                        <h2>Activity</h2>
+                        <p>Deployment completed</p>
+                        <p>5 support tickets closed</p>
+                        <p>New campaign scheduled</p>
+                    </div>
+                    <div class="card">
+                        <h2>Regions</h2>
+                        <p>North: 42%</p>
+                        <p>West: 31%</p>
+                        <p>South: 27%</p>
+                    </div>
+                </div>
+            `);
+        }
+
+        function portfolio() {
+            shell('3D Portfolio', 'Interactive portfolio preview.', `
+                <div class="grid two">
+                    <div class="cube-wrap">
+                        <div class="cube">
+                            <span>HTML</span><span>CSS</span><span>JS</span><span>UI</span><span>3D</span><span>Web</span>
+                        </div>
+                    </div>
+                    <div class="stack">
+                        <div class="card"><h2>Frontend Developer</h2><p>Responsive interfaces, animation, and browser-first experiences.</p></div>
+                        <div class="card"><h2>Selected Work</h2><p>Dashboards, games, creative tools, and portfolio systems.</p></div>
+                    </div>
+                </div>
+            `);
+        }
+
+        function profileCard() {
+            shell('Profile Card Generator', 'Create a clean shareable profile card.', `
+                <div class="grid two">
+                    <div class="stack">
+                        <input id="name" value="Alex Morgan" aria-label="Name">
+                        <input id="role" value="Frontend Developer" aria-label="Role">
+                        <textarea id="bio" aria-label="Bio">Building small polished web apps with JavaScript.</textarea>
+                    </div>
+                    <div class="card profile-card">
+                        <div class="avatar" id="avatar">A</div>
+                        <h2 id="cardName">Alex Morgan</h2>
+                        <p id="cardRole">Frontend Developer</p>
+                        <p id="cardBio">Building small polished web apps with JavaScript.</p>
+                    </div>
+                </div>
+            `);
+            const fields = ['name', 'role', 'bio'].map((id) => document.getElementById(id));
+            function update() {
+                const [name, role, bio] = fields.map((field) => field.value);
+                document.getElementById('avatar').textContent = (name.trim()[0] || 'A').toUpperCase();
+                document.getElementById('cardName').textContent = name || 'Name';
+                document.getElementById('cardRole').textContent = role || 'Role';
+                document.getElementById('cardBio').textContent = bio || 'Bio';
+            }
+            fields.forEach((field) => field.addEventListener('input', update));
+            update();
+        }
+
+        function taskTracker() {
+            shell('Task Tracker', 'Track tasks with local browser storage.', `
+                <form id="taskForm" class="row">
+                    <input id="taskInput" placeholder="Add a task" style="flex:1; min-width:220px">
+                    <button>Add</button>
+                </form>
+                <div class="card" style="margin-top:16px"><div id="tasks"></div></div>
+            `);
+            const key = 'gamezoneTasks';
+            const list = document.getElementById('tasks');
+            const input = document.getElementById('taskInput');
+            let tasks = JSON.parse(localStorage.getItem(key) || '[]');
+            function save() {
+                localStorage.setItem(key, JSON.stringify(tasks));
+            }
+            function render() {
+                list.innerHTML = tasks.length ? '' : '<p class="muted">No tasks yet.</p>';
+                tasks.forEach((task, index) => {
+                    const item = document.createElement('div');
+                    item.className = `task-item ${task.done ? 'done' : ''}`;
+                    item.innerHTML = `<span>${task.text}</span><div class="row"><button class="secondary" data-done="${index}">Done</button><button class="secondary" data-remove="${index}">Remove</button></div>`;
+                    list.appendChild(item);
+                });
+            }
+            document.getElementById('taskForm').addEventListener('submit', (event) => {
+                event.preventDefault();
+                if (!input.value.trim()) return;
+                tasks.push({ text: input.value.trim(), done: false });
+                input.value = '';
+                save();
+                render();
+            });
+            list.addEventListener('click', (event) => {
+                const done = event.target.dataset.done;
+                const remove = event.target.dataset.remove;
+                if (done !== undefined) tasks[done].done = !tasks[done].done;
+                if (remove !== undefined) tasks.splice(remove, 1);
+                save();
+                render();
+            });
+            render();
+        }
+
+        function newsApp() {
+            const stories = [
+                ['Technology', 'Mini project hub gets a cleaner browser launch flow.'],
+                ['Games', 'Classic canvas games remain popular in small JavaScript collections.'],
+                ['Design', 'Compact dashboards help users scan many projects quickly.'],
+                ['Learning', 'Vanilla JavaScript projects are still a strong practice path.'],
+            ];
+            shell('News App', 'Top stories and category browsing.', `
+                <div class="grid two">
+                    ${stories.map(([category, title]) => `<article class="card news-item"><div><p class="muted">${category}</p><h2>${title}</h2></div></article>`).join('')}
+                </div>
+            `);
+        }
+
+        function covidTracker() {
+            shell('COVID-19 Tracker', 'Global dashboard with live fetch when available.', `
+                <div class="grid three">
+                    <div class="card"><p class="muted">Cases</p><p class="metric" id="cases">Loading</p></div>
+                    <div class="card"><p class="muted">Recovered</p><p class="metric" id="recovered">Loading</p></div>
+                    <div class="card"><p class="muted">Deaths</p><p class="metric" id="deaths">Loading</p></div>
+                </div>
+                <p class="muted" id="covidStatus" style="margin-top:16px"></p>
+            `);
+            fetch('https://disease.sh/v3/covid-19/all')
+                .then((response) => response.ok ? response.json() : Promise.reject(new Error('fetch failed')))
+                .then((data) => {
+                    document.getElementById('cases').textContent = Number(data.cases || 0).toLocaleString();
+                    document.getElementById('recovered').textContent = Number(data.recovered || 0).toLocaleString();
+                    document.getElementById('deaths').textContent = Number(data.deaths || 0).toLocaleString();
+                    document.getElementById('covidStatus').textContent = `Updated ${new Date(data.updated || Date.now()).toLocaleString()}`;
+                })
+                .catch(() => {
+                    document.getElementById('cases').textContent = 'N/A';
+                    document.getElementById('recovered').textContent = 'N/A';
+                    document.getElementById('deaths').textContent = 'N/A';
+                    document.getElementById('covidStatus').textContent = 'Live data unavailable.';
+                });
+        }
+
+        function cartApp() {
+            const products = [
+                ['Keyboard', 79],
+                ['Headphones', 129],
+                ['Mouse', 49],
+            ];
+            shell('React Cart', 'Shopping cart demo.', `
+                <div class="grid two">
+                    <div class="card">
+                        <h2>Products</h2>
+                        ${products.map(([name, price], index) => `<div class="cart-item"><span>${name} - $${price}</span><button data-add="${index}">Add</button></div>`).join('')}
+                    </div>
+                    <div class="card">
+                        <h2>Cart</h2>
+                        <div id="cart"></div>
+                        <p class="metric" id="total">$0</p>
+                    </div>
+                </div>
+            `);
+            const cart = [];
+            const cartEl = document.getElementById('cart');
+            function render() {
+                cartEl.innerHTML = cart.length ? cart.map((item) => `<p>${item[0]} - $${item[1]}</p>`).join('') : '<p class="muted">Cart is empty.</p>';
+                document.getElementById('total').textContent = `$${cart.reduce((sum, item) => sum + item[1], 0)}`;
+            }
+            app.addEventListener('click', (event) => {
+                const index = event.target.dataset.add;
+                if (index !== undefined) {
+                    cart.push(products[index]);
+                    render();
+                }
+            });
+            render();
+        }
+
+        function videoCall() {
+            shell('Video Call', 'Camera preview and call controls.', `
+                <div class="grid two">
+                    <video id="video" autoplay muted playsinline></video>
+                    <div class="stack">
+                        <button id="start">Start Camera</button>
+                        <button id="stop" class="secondary">Stop</button>
+                        <div class="result" id="status">Ready</div>
+                    </div>
+                </div>
+            `);
+            let stream;
+            const video = document.getElementById('video');
+            const status = document.getElementById('status');
+            document.getElementById('start').addEventListener('click', async () => {
+                if (!navigator.mediaDevices?.getUserMedia) {
+                    status.textContent = 'Camera access is not available in this browser.';
+                    return;
+                }
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                    video.srcObject = stream;
+                    status.textContent = 'Camera active';
+                } catch {
+                    status.textContent = 'Camera permission was not granted.';
+                }
+            });
+            document.getElementById('stop').addEventListener('click', () => {
+                if (stream) stream.getTracks().forEach((track) => track.stop());
+                video.srcObject = null;
+                status.textContent = 'Stopped';
+            });
+        }
+
+        function wordScramble() {
+            const words = [
+                ['browser', 'Runs your JavaScript games'],
+                ['canvas', 'A drawing surface for many arcade games'],
+                ['puzzle', 'A challenge solved by logic'],
+                ['arcade', 'Fast games with simple controls'],
+                ['script', 'JavaScript loaded by a page'],
+            ];
+            shell('Word Scramble', 'Unscramble the hidden word.', `
+                <div class="stack">
+                    <div class="card">
+                        <div class="scramble-word" id="scramble"></div>
+                        <p class="muted" id="hint"></p>
+                    </div>
+                    <div class="row">
+                        <input id="guess" placeholder="Your answer" style="flex:1; min-width:220px">
+                        <button id="check">Check</button>
+                        <button id="next" class="secondary">Next</button>
+                    </div>
+                    <div class="result" id="message">Ready</div>
+                </div>
+            `);
+            let current;
+            function shuffle(word) {
+                return word.split('').sort(() => Math.random() - 0.5).join('');
+            }
+            function next() {
+                current = words[Math.floor(Math.random() * words.length)];
+                let mixed = shuffle(current[0]);
+                while (mixed === current[0]) mixed = shuffle(current[0]);
+                document.getElementById('scramble').textContent = mixed;
+                document.getElementById('hint').textContent = current[1];
+                document.getElementById('guess').value = '';
+                document.getElementById('message').textContent = 'Ready';
+            }
+            document.getElementById('check').addEventListener('click', () => {
+                const guess = document.getElementById('guess').value.trim().toLowerCase();
+                document.getElementById('message').textContent = guess === current[0] ? 'Correct.' : 'Try again.';
+            });
+            document.getElementById('next').addEventListener('click', next);
+            next();
+        }
+
+        const apps = {
+            'text-analyzer': textAnalyzer,
+            'admin-dashboard': adminDashboard,
+            'portfolio': portfolio,
+            'profile-card': profileCard,
+            'task-tracker': taskTracker,
+            'news': newsApp,
+            'covid': covidTracker,
+            'cart': cartApp,
+            'video-call': videoCall,
+            'word-scramble': wordScramble,
+        };
+
+        (apps[appName] || wordScramble)();
+    </script>
+</body>
+</html>

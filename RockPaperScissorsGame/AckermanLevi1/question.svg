@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="Question mark">
+  <rect width="160" height="160" rx="24" fill="#f4f6fb"/>
+  <circle cx="80" cy="80" r="58" fill="#dce7ff"/>
+  <path fill="#334155" d="M72 100c0-10 5-17 15-24 8-6 12-11 12-19 0-10-8-17-20-17-11 0-19 5-26 15L39 44c10-15 24-23 43-23 24 0 40 14 40 34 0 15-7 25-21 34-9 6-12 10-12 17v4H72v-10Zm-2 31c0-7 5-12 12-12s12 5 12 12-5 12-12 12-12-5-12-12Z"/>
+</svg>

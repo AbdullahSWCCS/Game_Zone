@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAME ZONE - Play Amazing Mini Games</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🎮</span>
+                <h1>GAME <span class="logo-highlight">ZONE</span></h1>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-category="all">
+                    <span class="nav-icon">🏠</span> Home
+                </a>
+                <a href="#" class="nav-item" data-category="action">
+                    <span class="nav-icon">💥</span> Action
+                </a>
+                <a href="#" class="nav-item" data-category="puzzle">
+                    <span class="nav-icon">🧩</span> Puzzle
+                </a>
+                <a href="#" class="nav-item" data-category="arcade">
+                    <span class="nav-icon">🕹️</span> Arcade
+                </a>
+                <a href="#" class="nav-item" data-category="strategy">
+                    <span class="nav-icon">♟️</span> Strategy
+                </a>
+                <a href="#" class="nav-item" data-category="racing">
+                    <span class="nav-icon">🏎️</span> Racing
+                </a>
+                <a href="#" class="nav-item" data-category="sports">
+                    <span class="nav-icon">⚽</span> Sports
+                </a>
+                <a href="#" class="nav-item" data-category="music">
+                    <span class="nav-icon">🎵</span> Music
+                </a>
+                <a href="#" class="nav-item" data-category="tools">
+                    <span class="nav-icon">🔧</span> Tools
+                </a>
+                <a href="#" class="nav-item" data-category="utility">
+                    <span class="nav-icon">📱</span> Utility
+                </a>
+                <a href="#" class="nav-item" data-category="favorites">
+                    <span class="nav-icon">❤️</span> Favorites
+                </a>
+                <a href="#" class="nav-item" data-category="achievements">
+                    <span class="nav-icon">🏆</span> Achievements
+                </a>
+                <a href="#" class="nav-item" data-view="profile">
+                    <span class="nav-icon">ID</span> Account
+                </a>
+                <a href="#" class="nav-item" data-view="uploads">
+                    <span class="nav-icon">UP</span> Upload Game
+                </a>
+                <a href="#" class="nav-item" data-view="friends">
+                    <span class="nav-icon">FR</span> Friends
+                </a>
+                <a href="#" class="nav-item" data-view="teams">
+                    <span class="nav-icon">TM</span> Teams
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-bar">
+                <div class="search-container">
+                    <input type="text" id="searchInput" class="search-box" placeholder="Search games...">
+                    <span class="search-icon">🔍</span>
+                </div>
+                <div class="top-stats">
+                    <span class="stat-item">
+                        <span class="crown-icon">👑</span> <span id="points">0</span> Points
+                    </span>
+                    <span class="stat-item">
+                        <span class="coin-icon">🪙</span> <span id="coins">0</span>
+                    </span>
+                    <button class="stat-item notification" id="notificationButton" type="button" aria-label="Notifications">
+                        🔔 <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+                    </button>
+                    <div class="notification-panel" id="notificationPanel" style="display: none;">
+                        <div class="notification-panel-header">
+                            <strong>Notifications</strong>
+                        </div>
+                        <div id="notificationList" class="simple-list"></div>
+                    </div>
+                    <button class="auth-status" id="authStatus" type="button">Local mode</button>
+                    <div class="profile-icon" id="profileButton">👤</div>
+                </div>
+            </div>
+
+            <!-- Games Grid Section -->
+            <section class="games-section dashboard-view" id="gamesSection">
+                <div class="section-header">
+                    <h2 id="sectionTitle">Popular Games</h2>
+                    <a href="#" class="view-all">View All</a>
+                </div>
+                <div class="games-grid" id="gamesGrid">
+                    <!-- Games will be dynamically loaded here -->
+                </div>
+            </section>
+
+            <!-- Recommended Section -->
+            <section class="recommended-section dashboard-view" id="recommendedSection">
+                <div class="section-header">
+                    <h2>Recommended for You</h2>
+                    <a href="#" class="view-all">View All</a>
+                </div>
+                <div class="recommended-grid" id="recommendedGrid">
+                    <!-- Recommended games will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Account/Profile Section -->
+            <section class="workspace-section" id="profileSection" style="display: none;">
+                <div class="section-header">
+                    <h2>Account & Player Profile</h2>
+                    <button class="secondary-action" id="signOutBtn" type="button">Sign out</button>
+                </div>
+                <div class="workspace-grid">
+                    <div class="workspace-card">
+                        <h3>Login / Signup</h3>
+                        <p class="helper-text" id="firebaseModeText">Connect Firebase config to save online.</p>
+                        <form id="authForm" class="form-stack">
+                            <input id="authName" type="text" placeholder="Display name">
+                            <input id="authEmail" type="email" placeholder="Email" required>
+                            <input id="authPassword" type="password" placeholder="Password" required>
+                            <div class="form-actions">
+                                <button type="submit" data-auth-action="signin">Sign in</button>
+                                <button type="submit" data-auth-action="signup" class="secondary-action">Create account</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="workspace-card admin-login-card" id="adminLoginCard">
+                        <h3>Admin Login</h3>
+                        <p class="helper-text">Only the configured admin account can open admin tools.</p>
+                        <form id="adminAuthForm" class="form-stack">
+                            <input id="adminEmail" type="email" placeholder="Admin email" required>
+                            <input id="adminPassword" type="password" placeholder="Admin password" required>
+                            <button type="submit">Open admin mode</button>
+                        </form>
+                    </div>
+                    <div class="workspace-card">
+                        <h3>Player Details</h3>
+                        <form id="profileForm" class="form-stack">
+                            <input id="profileDisplayName" type="text" placeholder="Display name">
+                            <input id="profileUsername" type="text" placeholder="Username">
+                            <input id="profileCountry" type="text" placeholder="Country">
+                            <label class="file-label">Profile image <input id="profileAvatarFile" type="file" accept="image/*"></label>
+                            <div class="profile-preview" id="profilePreview">GZ</div>
+                            <textarea id="profileBio" placeholder="Short bio"></textarea>
+                            <button type="submit">Save profile</button>
+                        </form>
+                    </div>
+                    <div class="workspace-card stats-card">
+                        <h3>Saved Stats</h3>
+                        <div class="profile-stats" id="profileStats"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload Game Section -->
+            <section class="workspace-section" id="uploadsSection" style="display: none;">
+                <div class="section-header">
+                    <h2>Upload Game</h2>
+                    <span class="helper-text">HTML/JS games can be playable in browser. EXE files are stored for download/review.</span>
+                </div>
+                <div class="workspace-grid two-col">
+                    <div class="workspace-card">
+                        <form id="uploadForm" class="form-stack">
+                            <input id="gameTitle" type="text" placeholder="Game title" required>
+                            <select id="gameCategory" required>
+                                <option value="arcade">Arcade</option>
+                                <option value="action">Action</option>
+                                <option value="puzzle">Puzzle</option>
+                                <option value="strategy">Strategy</option>
+                                <option value="racing">Racing</option>
+                                <option value="sports">Sports</option>
+                            </select>
+                            <select id="gamePlayType" required>
+                                <option value="single">Single player</option>
+                                <option value="multiplayer">Multiplayer</option>
+                                <option value="team">Team multiplayer</option>
+                            </select>
+                            <input id="gamePlayUrl" type="text" placeholder="Playable URL or local HTML path (optional)">
+                            <textarea id="gameDescription" placeholder="Game description"></textarea>
+                            <label class="file-label">Code ZIP / HTML / JS file <input id="gameCodeFile" type="file"></label>
+                            <label class="file-label">EXE file <input id="gameExeFile" type="file" accept=".exe,.zip,.rar"></label>
+                            <label class="file-label">Thumbnail image <input id="gameThumbnailFile" type="file" accept="image/*"></label>
+                            <button type="submit">Upload game</button>
+                        </form>
+                    </div>
+                    <div class="workspace-card">
+                        <h3>Community Uploaded Games</h3>
+                        <div class="uploaded-games-list" id="uploadedGamesList"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Friends Section -->
+            <section class="workspace-section" id="friendsSection" style="display: none;">
+                <div class="section-header">
+                    <h2>Friends</h2>
+                    <span class="helper-text">Search by email or username.</span>
+                </div>
+                <div class="workspace-grid two-col">
+                    <div class="workspace-card">
+                        <h3>Add Friend</h3>
+                        <form id="friendForm" class="form-stack">
+                            <input id="friendIdentifier" type="text" placeholder="Friend email or username" required>
+                            <button type="submit">Send request</button>
+                        </form>
+                    </div>
+                    <div class="workspace-card">
+                        <h3>Requests</h3>
+                        <div id="friendRequestsList" class="simple-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Teams Section -->
+            <section class="workspace-section" id="teamsSection" style="display: none;">
+                <div class="section-header">
+                    <h2>Teams & Multiplayer Rooms</h2>
+                    <span class="helper-text">Team records save now; real-time gameplay server can be added next.</span>
+                </div>
+                <div class="workspace-grid two-col">
+                    <div class="workspace-card">
+                        <form id="teamForm" class="form-stack">
+                            <input id="teamName" type="text" placeholder="Team name" required>
+                            <select id="teamGame"></select>
+                            <button type="submit">Create team</button>
+                        </form>
+                    </div>
+                    <div class="workspace-card">
+                        <h3>Open Teams</h3>
+                        <div id="teamsList" class="simple-list"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <!-- Daily Bonus -->
+            <div class="card bonus-card">
+                <div class="bonus-header">
+                    <h3>Daily Bonus</h3>
+                    <span class="bonus-icon">🎁</span>
+                </div>
+                <p class="bonus-text">Claim your reward!</p>
+                <button class="claim-btn">Claim</button>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="card leaderboard-card">
+                <h3>Leaderboard</h3>
+                <div class="leaderboard-list" id="leaderboard">
+                    <div class="leaderboard-item">
+                        <span class="rank">1</span>
+                        <span class="name">Player One</span>
+                        <span class="score">9,850</span>
+                    </div>
+                    <div class="leaderboard-item">
+                        <span class="rank">2</span>
+                        <span class="name">GameMaster</span>
+                        <span class="score">7,450</span>
+                    </div>
+                    <div class="leaderboard-item">
+                        <span class="rank">3</span>
+                        <span class="name">SpeedyKing</span>
+                        <span class="score">6,200</span>
+                    </div>
+                    <div class="leaderboard-item">
+                        <span class="rank">4</span>
+                        <span class="name">PuzzlePro</span>
+                        <span class="score">5,890</span>
+                    </div>
+                    <div class="leaderboard-item">
+                        <span class="rank">5</span>
+                        <span class="name">StarGamer</span>
+                        <span class="score">4,300</span>
+                    </div>
+                </div>
+                <a href="#" class="view-full">View Full Leaderboard</a>
+            </div>
+
+            <!-- Categories Filter -->
+            <div class="card categories-card">
+                <h3>Categories</h3>
+                <div class="category-tags">
+                    <button class="tag-btn active" data-category="all">All</button>
+                    <button class="tag-btn" data-category="puzzle">Puzzle</button>
+                    <button class="tag-btn" data-category="action">Action</button>
+                    <button class="tag-btn" data-category="arcade">Arcade</button>
+                    <button class="tag-btn" data-category="popular">Popular</button>
+                    <button class="tag-btn" data-category="offline">Offline</button>
+                    <button class="tag-btn" data-category="tools">Tools</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-bottom-item active">
+            <span class="bottom-icon">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="#" class="nav-bottom-item">
+            <span class="bottom-icon">🎮</span>
+            <span>Games</span>
+        </a>
+        <a href="#" class="nav-bottom-item play-btn">
+            <span class="play-icon">▶️</span>
+            <span>Play</span>
+        </a>
+        <a href="#" class="nav-bottom-item">
+            <span class="bottom-icon">👥</span>
+            <span>Friends</span>
+        </a>
+        <a href="#" class="nav-bottom-item">
+            <span class="bottom-icon">👤</span>
+            <span>Profile</span>
+        </a>
+    </nav>
+
+    <!-- Game Modal -->
+    <div id="gameModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="game-toolbar">
+                <div>
+                    <strong id="activeGameTitle">Game</strong>
+                    <span id="playTimer">00:00</span>
+                </div>
+                <div class="game-toolbar-actions">
+                    <button id="levelCompleteBtn" type="button">Level complete</button>
+                    <span class="close-btn">&times;</span>
+                </div>
+            </div>
+            <iframe id="gameFrame" src="" frameborder="0" allow="fullscreen" style="width: 100%; height: calc(100% - 58px); border: none; margin-top: 58px;"></iframe>
+        </div>
+    </div>
+
+    <div id="authGateModal" class="auth-gate" style="display: none;">
+        <div class="auth-gate-card">
+            <h2>Login required</h2>
+            <p class="helper-text">Sign in or create an account to play games, claim rewards, add friends, and save progress.</p>
+            <form id="gateAuthForm" class="form-stack">
+                <input id="gateAuthName" type="text" placeholder="Display name">
+                <input id="gateAuthEmail" type="email" placeholder="Email" required>
+                <input id="gateAuthPassword" type="password" placeholder="Password" required>
+                <div class="form-actions">
+                    <button type="submit" data-auth-action="signin">Sign in</button>
+                    <button type="submit" data-auth-action="signup" class="secondary-action">Create account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="publicProfileModal" class="auth-gate" style="display: none;">
+        <div class="auth-gate-card public-profile-card">
+            <button class="profile-modal-close" id="publicProfileClose" type="button" aria-label="Close">&times;</button>
+            <div class="profile-preview" id="publicProfileAvatar">GZ</div>
+            <h2 id="publicProfileName">Player</h2>
+            <p class="helper-text" id="publicProfileMeta"></p>
+            <p id="publicProfileBio"></p>
+        </div>
+    </div>
+
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
+    <script src="firebase-service.js"></script>
+    <script src="games-data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

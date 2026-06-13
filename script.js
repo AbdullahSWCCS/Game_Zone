@@ -1,6 +1,7 @@
 let currentUser = null;
 let currentProfile = null;
 let communityGames = [];
+let adminGames = [];
 let activeGame = null;
 let activeSession = null;
 let playTimerInterval = null;
@@ -8,7 +9,29 @@ let awardedThirtyMinuteMarks = 0;
 let avatarImageDraft = "";
 let friendRequestCache = [];
 
-document.addEventListener("DOMContentLoaded", function () {
+async function refreshAdminGames() {
+    if (window.GameManagementSystem) {
+        try {
+            adminGames = await window.GameManagementSystem.getAllGames({ limit: 1000 });
+        } catch (error) {
+            console.error('Error loading admin library games:', error);
+            adminGames = [];
+        }
+    } else {
+        adminGames = [];
+    }
+}
+
+window.addEventListener('storage', function (event) {
+    if (event.key === 'gamezone_games_library') {
+        refreshAdminGames().then(() => {
+            displayGames('all');
+        });
+    }
+});
+
+document.addEventListener("DOMContentLoaded", async function () {
+    await refreshAdminGames();
     initializeDashboard();
     setupEventListeners();
     setupFirebaseListeners();
@@ -97,6 +120,11 @@ function setupEventListeners() {
 
     document.querySelector(".claim-btn").addEventListener("click", claimDailyBonus);
     document.querySelector(".close-btn").addEventListener("click", closeGameModal);
+    document.getElementById("downloadGameBtn").addEventListener("click", function () {
+        if (activeGame && activeGame.downloadUrl) {
+            downloadGameFile(activeGame.downloadUrl, activeGame.name);
+        }
+    });
     document.getElementById("gameModal").addEventListener("click", function (e) {
         if (e.target === this) closeGameModal();
     });
@@ -214,7 +242,23 @@ function getCatalogGames() {
         link: game.playUrl || game.codeUrl || "",
         upload: game
     }));
-    return [...allGames, ...uploaded];
+
+    const adminLibrary = adminGames.map((game) => ({
+        name: game.name || "Admin Game",
+        category: game.category || "arcade",
+        emoji: game.emoji || "🎮",
+        link: game.link || "",
+        imageUrl: game.imageUrl || "",
+        downloadUrl: game.downloadUrl || "",
+        downloadSize: game.downloadSize || 0,
+        isOnline: game.isOnline || false,
+        isDownloadable: game.isDownloadable || false,
+        author: game.author || "Unknown",
+        description: game.description || "",
+        upload: game
+    }));
+
+    return [...allGames, ...adminLibrary, ...uploaded];
 }
 
 function displayGames(category) {
@@ -254,6 +298,7 @@ function createGameCard(game) {
     const card = document.createElement("div");
     card.className = "game-card";
     card.innerHTML = `
+        ${game.isDownloadable && game.downloadUrl ? `<button class="download-badge" title="Download ${escapeHtml(game.name)}">⬇</button>` : ''}
         <div class="game-image">${escapeHtml(game.emoji || "GZ")}</div>
         <div class="game-info">
             <div class="game-title">${escapeHtml(game.name)}</div>
@@ -266,6 +311,15 @@ function createGameCard(game) {
             </div>
         </div>
     `;
+
+    if (game.isDownloadable && game.downloadUrl) {
+        const downloadBtn = card.querySelector('.download-badge');
+        downloadBtn.addEventListener('click', function (event) {
+            event.stopPropagation();
+            downloadGameFile(game.downloadUrl, game.name);
+        });
+    }
+
     card.addEventListener("click", () => openGame(game));
     card.addEventListener("dblclick", () => addToFavorites(game));
     card.addEventListener("mouseenter", function () {
@@ -302,6 +356,11 @@ function openGame(game) {
         return;
     }
     if (!game.link) {
+        if (game.isDownloadable && game.downloadUrl) {
+            downloadGameFile(game.downloadUrl, game.name);
+            return;
+        }
+
         showNotification("This uploaded game has no playable browser URL yet.");
         return;
     }
@@ -320,8 +379,38 @@ function openGame(game) {
     document.getElementById("levelCompleteBtn").style.display = "";
     document.getElementById("levelCompleteBtn").disabled = false;
     document.body.style.overflow = "hidden";
+    updateGameModalForDownload(game);
     recordGamePlay(game.name);
     startPlayTimer();
+}
+
+function updateGameModalForDownload(game) {
+    const downloadButton = document.getElementById("downloadGameBtn");
+    if (!downloadButton) return;
+
+    if (game.isDownloadable && game.downloadUrl) {
+        downloadButton.style.display = "inline-block";
+        downloadButton.disabled = false;
+        downloadButton.textContent = `Download ${game.downloadSize ? `(${game.downloadSize} MB)` : ''}`;
+    } else {
+        downloadButton.style.display = "none";
+    }
+}
+
+function downloadGameFile(url, name) {
+    try {
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.target = '_blank';
+        anchor.download = `${name || 'game'}`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        showNotification('Download started.');
+    } catch (error) {
+        console.error('Download failed:', error);
+        showNotification('Unable to start download. Please try again.');
+    }
 }
 
 function isAdminGame(game) {

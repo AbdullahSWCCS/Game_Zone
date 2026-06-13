@@ -370,7 +370,7 @@ async function handleAddGame(e) {
         isOnline: formData.get('isOnline') === 'on',
         isDownloadable: formData.get('isDownloadable') === 'on',
         downloadUrl: formData.get('downloadUrl'),
-        downloadSize: parseInt(formData.get('downloadSize')) || 0
+        downloadSize: parseFloat(formData.get('downloadSize')) || 0
     };
 
     try {

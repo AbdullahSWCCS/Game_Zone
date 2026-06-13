@@ -120,7 +120,6 @@ function setupEventListeners() {
 
     document.getElementById("authForm").addEventListener("submit", handleAuthSubmit);
     document.getElementById("gateAuthForm").addEventListener("submit", handleAuthSubmit);
-    document.getElementById("adminAuthForm").addEventListener("submit", handleAdminAuthSubmit);
     document.getElementById("signOutBtn").addEventListener("click", handleSignOut);
     document.getElementById("profileForm").addEventListener("submit", handleProfileSave);
     document.getElementById("profileAvatarFile").addEventListener("change", handleAvatarPreview);
@@ -439,24 +438,18 @@ async function handleAuthSubmit(event) {
     }
 }
 
-async function handleAdminAuthSubmit(event) {
-    event.preventDefault();
+async function handleSignOut() {
     if (!service()) return;
-    try {
-        await service().signInAdmin(
-            document.getElementById("adminEmail").value.trim(),
-            document.getElementById("adminPassword").value
-        );
-        currentProfile = await service().getUserProfile();
-        syncProfileToUi();
-        showNotification("Admin mode enabled.");
-        event.target.reset();
-    } catch (error) {
-        showNotification(error.message || "Admin login failed.");
-    }
+    await service().signOut();
+    currentUser = null;
+    currentProfile = null;
+    friendRequestCache = [];
+    renderNotificationList([]);
+    syncProfileToUi();
+    showNotification("Signed out.");
 }
 
-async function handleSignOut() {
+async function handleProfileSave() {
     if (!service()) return;
     await service().signOut();
     currentUser = null;
@@ -766,7 +759,6 @@ function syncProfileToUi() {
 
     document.getElementById("authForm").closest(".workspace-card").style.display = currentUser ? "none" : "";
     document.getElementById("signOutBtn").style.display = currentUser ? "" : "none";
-    document.getElementById("adminLoginCard").style.display = isCurrentAdmin() ? "none" : "";
 
     document.getElementById("profileDisplayName").value = profile.displayName || "";
     document.getElementById("profileUsername").value = profile.username || "";

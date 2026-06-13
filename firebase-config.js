@@ -11,5 +11,5 @@ window.GAMEZONE_FIREBASE_CONFIG = {
 };
 
 // Change these before sharing the site. Normal users never get admin access.
-window.GAMEZONE_ADMIN_EMAIL = "admin@gamezone.local";
-window.GAMEZONE_ADMIN_PASSWORD = "admin12345";
+window.GAMEZONE_ADMIN_EMAIL = "ansariabdullah11112222@gmail.com";
+window.GAMEZONE_ADMIN_PASSWORD = "Admin@123";

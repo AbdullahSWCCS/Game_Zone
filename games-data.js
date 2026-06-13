@@ -472,12 +472,6 @@ const allGames = [
         link: "ContentWriter/JugalShrestha/index.html"
     },
     {
-        name: "Admin Dashboard",
-        category: "tools",
-        emoji: "📊",
-        link: "static-browser-apps.html?app=admin-dashboard"
-    },
-    {
         name: "Navigation Bar",
         category: "tools",
         emoji: "🧭",

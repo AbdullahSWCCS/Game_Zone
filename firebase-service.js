@@ -169,13 +169,14 @@
 
     async function signInAdmin(email, password) {
         const cleanEmail = normalizeEmail(email);
-        if (mode !== "firebase" && cleanEmail === adminEmail && password === adminPassword) {
+        const isHardcodedAdmin = cleanEmail === adminEmail && password === adminPassword;
+        if (isHardcodedAdmin) {
             const accounts = localAccounts();
             const account = saveLocalAccount({
                 ...(accounts[cleanEmail] || {}),
                 uid: accounts[cleanEmail]?.uid || uid(),
                 email: cleanEmail,
-                displayName: accounts[cleanEmail]?.displayName || "GameZone Admin",
+                displayName: accounts[cleanEmail]?.displayName || "Admin",
                 password,
                 role: "admin",
                 isLocal: true
@@ -191,6 +192,7 @@
             write("gamezoneProfiles", profiles);
             return account;
         }
+
         const user = await signIn(email, password);
         const profile = await getUserProfile(user);
         const isFirebaseAdmin = mode === "firebase" && profile?.role === "admin";

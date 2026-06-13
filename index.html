@@ -137,15 +137,6 @@
                             </div>
                         </form>
                     </div>
-                    <div class="workspace-card admin-login-card" id="adminLoginCard">
-                        <h3>Admin Login</h3>
-                        <p class="helper-text">Only the configured admin account can open admin tools.</p>
-                        <form id="adminAuthForm" class="form-stack">
-                            <input id="adminEmail" type="email" placeholder="Admin email" required>
-                            <input id="adminPassword" type="password" placeholder="Admin password" required>
-                            <button type="submit">Open admin mode</button>
-                        </form>
-                    </div>
                     <div class="workspace-card">
                         <h3>Player Details</h3>
                         <form id="profileForm" class="form-stack">
@@ -381,6 +372,13 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
     <script src="firebase-service.js"></script>
     <script src="games-data.js"></script>
+    <!-- Core Platform Systems -->
+    <script src="core/game-save.js"></script>
+    <script src="core/friends-system.js"></script>
+    <script src="core/points-system.js"></script>
+    <script src="core/game-management.js"></script>
+    <script src="core/admin-management.js"></script>
+    <!-- Main App -->
     <script src="script.js"></script>
 </body>
 </html>

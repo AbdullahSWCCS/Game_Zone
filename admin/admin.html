@@ -535,12 +535,12 @@
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Download URL</label>
-                                <input type="text" name="downloadUrl" placeholder="https://...">
+                                <label>Download File (EXE/ZIP)</label>
+                                <input type="file" name="downloadFile" accept=".exe,.zip,.rar,.7z,.msi">
                             </div>
                             <div class="form-group">
-                                <label>Download Size (MB)</label>
-                            <input type="number" step="0.1" name="downloadSize" placeholder="0">
+                                <label>Download Size (MB) - Auto-calculated</label>
+                                <input type="number" step="0.1" name="downloadSize" placeholder="0" readonly>
 
                         <button type="submit" class="btn-add">Add Game</button>
                     </form>

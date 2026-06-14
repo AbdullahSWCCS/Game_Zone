@@ -9,6 +9,8 @@ let awardedThirtyMinuteMarks = 0;
 let avatarImageDraft = "";
 let friendRequestCache = [];
 
+let downloadQueue = [];
+
 async function refreshAdminGames() {
     if (window.GameManagementSystem) {
         try {
@@ -32,6 +34,7 @@ window.addEventListener('storage', function (event) {
 
 document.addEventListener("DOMContentLoaded", async function () {
     await refreshAdminGames();
+    downloadQueue = loadDownloadQueue();
     initializeDashboard();
     setupEventListeners();
     setupFirebaseListeners();
@@ -122,7 +125,7 @@ function setupEventListeners() {
     document.querySelector(".close-btn").addEventListener("click", closeGameModal);
     document.getElementById("downloadGameBtn").addEventListener("click", function () {
         if (activeGame && activeGame.downloadUrl) {
-            downloadGameFile(activeGame.downloadUrl, activeGame.name);
+            enqueueAndStartDownload(activeGame);
         }
     });
     document.getElementById("gameModal").addEventListener("click", function (e) {
@@ -132,6 +135,15 @@ function setupEventListeners() {
         if (e.target === this) closePublicProfile();
     });
     document.getElementById("levelCompleteBtn").addEventListener("click", markLevelComplete);
+    document.getElementById("startAllDownloadsBtn").addEventListener("click", function () {
+        downloadQueue.filter((item) => item.status === 'pending' || item.status === 'paused').forEach((item) => startDownload(item.id));
+        renderDownloadManager();
+    });
+    document.getElementById("clearCompletedDownloadsBtn").addEventListener("click", function () {
+        downloadQueue = downloadQueue.filter((item) => item.status !== 'completed');
+        saveDownloadQueue();
+        renderDownloadManager();
+    });
     document.getElementById("profileButton").addEventListener("click", function () {
         showWorkspace("profile");
     });
@@ -229,9 +241,199 @@ function showWorkspace(view) {
     const section = document.getElementById(`${view}Section`);
     if (section) section.style.display = "";
     if (view === "uploads") refreshCommunityGames();
+    if (view === "downloads") renderDownloadManager();
     if (view === "friends") refreshFriendRequests();
     if (view === "teams") refreshTeams();
     if (view === "profile") syncProfileToUi();
+}
+
+function loadDownloadQueue() {
+    try {
+        const stored = JSON.parse(localStorage.getItem('gamezone_download_queue') || '[]');
+        return stored.map((item) => ({
+            ...item,
+            status: item.status === 'downloading' ? 'paused' : item.status,
+            statusText: item.status === 'downloading' ? 'Paused' : item.statusText || 'Waiting to start',
+            progress: Number.isFinite(item.progress) ? item.progress : 0
+        }));
+    } catch (error) {
+        console.warn('Failed to load download queue:', error);
+        return [];
+    }
+}
+
+function saveDownloadQueue() {
+    try {
+        localStorage.setItem('gamezone_download_queue', JSON.stringify(downloadQueue));
+    } catch (error) {
+        console.warn('Unable to save download queue:', error);
+    }
+}
+
+function isDownloadActive() {
+    return downloadQueue.some((item) => item.status === 'downloading');
+}
+
+function updateDownloadNavBadge() {
+    const badge = document.getElementById('downloadsBadge');
+    if (!badge) return;
+    const queueCount = downloadQueue.filter((item) => item.status !== 'completed').length;
+    if (queueCount > 0) {
+        badge.textContent = queueCount;
+        badge.style.display = 'inline-flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function startNextPendingDownload() {
+    if (isDownloadActive()) return;
+    const nextItem = downloadQueue.find((item) => item.status === 'pending');
+    if (nextItem) startDownload(nextItem.id);
+}
+
+function renderDownloadManager() {
+    const activeList = document.getElementById('activeDownloadsList');
+    const completedList = document.getElementById('completedDownloadsList');
+    activeList.innerHTML = '';
+    completedList.innerHTML = '';
+
+    downloadQueue.forEach((item) => {
+        const downloadHtml = createDownloadItemHtml(item);
+        if (item.status === 'completed') {
+            completedList.appendChild(downloadHtml);
+        } else {
+            activeList.appendChild(downloadHtml);
+        }
+    });
+    updateDownloadNavBadge();
+}
+
+function createDownloadItemHtml(item) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'download-item';
+    wrapper.innerHTML = `
+        <div class="download-info">
+            <div class="download-title">${escapeHtml(item.name || 'Unknown Game')}</div>
+            <div class="download-meta">${escapeHtml(item.statusText)}${item.downloadSize ? ` • ${item.downloadSize} MB` : ''}</div>
+            ${item.status !== 'completed' ? `<div class="progress-bar"><div class="progress-fill" style="width:${item.progress}%"></div></div>` : ''}
+        </div>
+        <div class="download-actions" data-id="${item.id}"></div>
+    `;
+
+    const actions = wrapper.querySelector('.download-actions');
+    if (item.status === 'pending' || item.status === 'queued') {
+        const startBtn = document.createElement('button');
+        startBtn.textContent = 'Start';
+        startBtn.addEventListener('click', () => startDownload(item.id));
+        actions.appendChild(startBtn);
+    }
+
+    if (item.status === 'downloading') {
+        const pauseBtn = document.createElement('button');
+        pauseBtn.textContent = 'Pause';
+        pauseBtn.addEventListener('click', () => pauseDownload(item.id));
+        actions.appendChild(pauseBtn);
+    } else if (item.status === 'paused') {
+        const resumeBtn = document.createElement('button');
+        resumeBtn.textContent = 'Resume';
+        resumeBtn.addEventListener('click', () => resumeDownload(item.id));
+        actions.appendChild(resumeBtn);
+    }
+
+    if (item.status === 'completed') {
+        const openBtn = document.createElement('button');
+        openBtn.textContent = 'Open';
+        openBtn.addEventListener('click', () => downloadGameFile(item.downloadUrl, item.name));
+        actions.appendChild(openBtn);
+    }
+
+    return wrapper;
+}
+
+function enqueueDownload(game) {
+    const existing = downloadQueue.find((item) => item.id === game.gameId || item.downloadUrl === game.downloadUrl);
+    if (existing) {
+        showNotification(`${game.name} is already in the download queue.`);
+        return;
+    }
+
+    downloadQueue.push({
+        id: game.gameId || `dl_${Date.now()}`,
+        name: game.name,
+        downloadUrl: game.downloadUrl,
+        downloadSize: game.downloadSize,
+        status: 'pending',
+        statusText: 'Waiting to start',
+        progress: 0
+    });
+    saveDownloadQueue();
+    renderDownloadManager();
+    startNextPendingDownload();
+}
+
+function startDownload(itemId) {
+    const item = downloadQueue.find((dl) => dl.id === itemId);
+    if (!item || item.status === 'downloading' || item.status === 'completed') return;
+
+    if (isDownloadActive() && item.status === 'pending') {
+        item.status = 'queued';
+        item.statusText = 'Queued';
+        saveDownloadQueue();
+        renderDownloadManager();
+        return;
+    }
+
+    item.status = 'downloading';
+    item.statusText = 'Downloading';
+    item.progress = Math.max(0, item.progress || 0);
+    saveDownloadQueue();
+    renderDownloadManager();
+
+    const interval = setInterval(() => {
+        if (item.status !== 'downloading') {
+            clearInterval(interval);
+            return;
+        }
+        item.progress = Math.min(100, item.progress + Math.floor(Math.random() * 12) + 8);
+        if (item.progress >= 100) {
+            item.progress = 100;
+            item.status = 'completed';
+            item.statusText = 'Completed';
+            clearInterval(interval);
+            saveDownloadQueue();
+            showNotification(`Download finished: ${item.name}`);
+            renderDownloadManager();
+            startNextPendingDownload();
+            return;
+        }
+        saveDownloadQueue();
+        renderDownloadManager();
+    }, 800);
+}
+
+function pauseDownload(itemId) {
+    const item = downloadQueue.find((dl) => dl.id === itemId);
+    if (!item || item.status !== 'downloading') return;
+    item.status = 'paused';
+    item.statusText = 'Paused';
+    saveDownloadQueue();
+    renderDownloadManager();
+    startNextPendingDownload();
+}
+
+function resumeDownload(itemId) {
+    const item = downloadQueue.find((dl) => dl.id === itemId);
+    if (!item || item.status !== 'paused') return;
+    item.status = 'pending';
+    item.statusText = 'Queued';
+    saveDownloadQueue();
+    renderDownloadManager();
+    startNextPendingDownload();
+}
+
+function enqueueAndStartDownload(game) {
+    enqueueDownload(game);
 }
 
 function getCatalogGames() {
@@ -316,7 +518,7 @@ function createGameCard(game) {
         const downloadBtn = card.querySelector('.download-badge');
         downloadBtn.addEventListener('click', function (event) {
             event.stopPropagation();
-            downloadGameFile(game.downloadUrl, game.name);
+            enqueueAndStartDownload(game);
         });
     }
 
@@ -347,6 +549,10 @@ function filterGames(searchTerm) {
 
 function openGame(game) {
     if (!currentUser) {
+        if (game.isDownloadable && game.downloadUrl) {
+            enqueueAndStartDownload(game);
+            return;
+        }
         openAuthGate();
         return;
     }
@@ -357,7 +563,7 @@ function openGame(game) {
     }
     if (!game.link) {
         if (game.isDownloadable && game.downloadUrl) {
-            downloadGameFile(game.downloadUrl, game.name);
+            enqueueAndStartDownload(game);
             return;
         }
 
@@ -397,19 +603,146 @@ function updateGameModalForDownload(game) {
     }
 }
 
-function downloadGameFile(url, name) {
+function getFileExtension(url) {
+    if (!url) return '';
+    const match = url.match(/\.([a-z0-9]+)(?:[?#]|$)/i);
+    return match ? `.${match[1]}` : '';
+}
+
+function resolveDirectDownloadUrl(url) {
+    if (!url) return url;
+    const trimmed = url.trim();
+    
+    // Firebase Storage URLs - these are already direct download URLs
+    if (trimmed.includes('firebasestorage.googleapis.com') || trimmed.includes('firebase.google.com')) {
+        // Ensure alt=media for direct download
+        if (!trimmed.includes('alt=media')) {
+            const separator = trimmed.includes('?') ? '&' : '?';
+            return `${trimmed}${separator}alt=media`;
+        }
+        return trimmed;
+    }
+    
+    // Local Firebase Storage references
+    if (trimmed.startsWith('local-upload://')) {
+        return trimmed;
+    }
+    
+    const driveFileIdMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveFileIdMatch) {
+        return `https://drive.google.com/uc?export=download&id=${driveFileIdMatch[1]}`;
+    }
+    const driveIdQuery = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (trimmed.includes('drive.google.com') && driveIdQuery) {
+        return `https://drive.google.com/uc?export=download&id=${driveIdQuery[1]}`;
+    }
+    const driveOpenMatch = trimmed.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (driveOpenMatch) {
+        return `https://drive.google.com/uc?export=download&id=${driveOpenMatch[1]}`;
+    }
+    if (trimmed.includes('dropbox.com')) {
+        if (trimmed.includes('?dl=0')) {
+            return trimmed.replace('?dl=0', '?dl=1');
+        }
+        if (!trimmed.includes('?dl=1')) {
+            return `${trimmed}${trimmed.includes('?') ? '&' : '?'}dl=1`;
+        }
+    }
+    return trimmed;
+}
+
+async function downloadGameFile(url, name) {
     try {
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.target = '_blank';
-        anchor.download = `${name || 'game'}`;
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
+        if (!url) {
+            showNotification('No download URL available.');
+            return;
+        }
+
+        const directUrl = resolveDirectDownloadUrl(url);
+        const extension = getFileExtension(directUrl) || getFileExtension(url) || '.exe';
+        const filename = `${(name || 'game').replace(/[^a-z0-9]/gi, '_')}${extension}`;
+
+        console.log('Starting download:', { url: directUrl, filename });
+
+        // Check if it's Firebase Storage
+        const isFirebaseStorage = directUrl.includes('firebasestorage.googleapis.com');
+        // Check if it's Drive or Dropbox (external service)
+        const isExternalService = directUrl.includes('drive.google.com') || directUrl.includes('dropbox.com');
+        // Check if it's local reference
+        const isLocalRef = directUrl.startsWith('local-upload://');
+
+        const prepareAndClick = (href, fname) => {
+            const anchor = document.createElement('a');
+            anchor.href = href;
+            anchor.download = fname;
+            anchor.setAttribute('download', fname);
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+        };
+
+        // For Firebase Storage URLs: fetch as blob
+        if (isFirebaseStorage) {
+            try {
+                console.log('Fetching from Firebase Storage...');
+                const response = await fetch(directUrl);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                prepareAndClick(blobUrl, filename);
+                
+                // Cleanup after download starts
+                setTimeout(() => {
+                    URL.revokeObjectURL(blobUrl);
+                }, 10000);
+                
+                showNotification(`✓ Downloading: ${name} (${(blob.size / (1024 * 1024)).toFixed(2)} MB)`);
+                return;
+            } catch (fetchError) {
+                console.error('Firebase fetch failed:', fetchError);
+                showNotification('Download failed. Please try again.');
+                return;
+            }
+        }
+
+        // For external services (Drive, Dropbox): open in new tab
+        if (isExternalService) {
+            console.log('Opening external download link...');
+            window.open(directUrl, '_blank');
+            showNotification('Opening download link in a new tab. Save the file to your downloads folder.');
+            return;
+        }
+
+        // For local references: show message
+        if (isLocalRef) {
+            showNotification('⚠️ Local mode: File not stored. Configure Firebase to enable file downloads.');
+            return;
+        }
+
+        // Fallback: try as direct link
+        try {
+            const response = await fetch(directUrl);
+            if (response.ok) {
+                const blob = await response.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                prepareAndClick(blobUrl, filename);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                showNotification(`✓ Download started: ${filename}`);
+                return;
+            }
+        } catch (e) {
+            console.warn('Fallback fetch failed:', e);
+        }
+
+        // Last resort: direct anchor click
+        console.log('Using direct link fallback...');
+        prepareAndClick(directUrl, filename);
         showNotification('Download started.');
+
     } catch (error) {
-        console.error('Download failed:', error);
-        showNotification('Unable to start download. Please try again.');
+        console.error('Download error:', error);
+        showNotification('Download failed. Please try again.');
     }
 }
 

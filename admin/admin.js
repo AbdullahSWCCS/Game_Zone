@@ -355,10 +355,72 @@ async function showUserDetails(userId) {
     }
 }
 
+function normalizeAdminDownloadUrl(url) {
+    if (!url) return '';
+    const trimmed = url.trim();
+    const driveFileIdMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (driveFileIdMatch) {
+        return `https://drive.google.com/uc?export=download&id=${driveFileIdMatch[1]}`;
+    }
+    const driveIdQuery = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (trimmed.includes('drive.google.com') && driveIdQuery) {
+        return `https://drive.google.com/uc?export=download&id=${driveIdQuery[1]}`;
+    }
+    const driveOpenMatch = trimmed.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (driveOpenMatch) {
+        return `https://drive.google.com/uc?export=download&id=${driveOpenMatch[1]}`;
+    }
+    if (trimmed.includes('dropbox.com')) {
+        if (trimmed.includes('?dl=0')) {
+            return trimmed.replace('?dl=0', '?dl=1');
+        }
+        if (!trimmed.includes('?dl=1')) {
+            return `${trimmed}${trimmed.includes('?') ? '&' : '?'}dl=1`;
+        }
+    }
+    return trimmed;
+}
+
 async function handleAddGame(e) {
     e.preventDefault();
 
     const formData = new FormData(e.target);
+    const downloadFile = formData.get('downloadFile');
+    const isDownloadable = formData.get('isDownloadable') === 'on';
+
+    let downloadUrl = '';
+    let downloadSize = 0;
+
+    // If downloadable and file is provided, upload to Firebase Storage
+    if (isDownloadable && downloadFile) {
+        try {
+            console.log('Uploading game file to Firebase Storage...');
+            downloadSize = parseFloat((downloadFile.size / (1024 * 1024)).toFixed(2)); // MB
+            
+            // Create path for admin game uploads
+            const timestamp = Date.now();
+            const filename = `${formData.get('name')}_${timestamp}_${downloadFile.name}`;
+            const uploadPath = `admin_games/${filename}`;
+
+            // Upload to Firebase Storage
+            const service = window.GameZoneFirebase;
+            if (service && service.mode === 'firebase' && service.storage) {
+                const ref = service.storage.ref(uploadPath);
+                await ref.put(downloadFile);
+                downloadUrl = await ref.getDownloadURL();
+                console.log('File uploaded successfully:', downloadUrl);
+            } else {
+                // Fallback for local mode
+                alert('⚠️ Firebase not configured. Using local mode (file will not persist across browsers).');
+                downloadUrl = `local-upload://${uploadPath}`;
+            }
+        } catch (error) {
+            console.error('File upload error:', error);
+            alert(`❌ File upload failed: ${error.message}`);
+            return;
+        }
+    }
+
     const gameData = {
         name: formData.get('name'),
         category: formData.get('category'),
@@ -368,14 +430,14 @@ async function handleAddGame(e) {
         link: formData.get('link'),
         imageUrl: formData.get('imageUrl'),
         isOnline: formData.get('isOnline') === 'on',
-        isDownloadable: formData.get('isDownloadable') === 'on',
-        downloadUrl: formData.get('downloadUrl'),
-        downloadSize: parseFloat(formData.get('downloadSize')) || 0
+        isDownloadable: isDownloadable,
+        downloadUrl: downloadUrl,
+        downloadSize: downloadSize
     };
 
     try {
         const gameId = await window.GameManagementSystem.addGame(gameData);
-        alert(`✅ Game "${gameData.name}" added successfully!`);
+        alert(`✅ Game "${gameData.name}" added successfully!${downloadUrl ? '\n✓ File stored on Firebase Storage' : ''}`);
         e.target.reset();
         showSection('games');
         loadGames();

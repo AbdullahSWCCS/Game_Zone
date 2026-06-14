@@ -8,6 +8,47 @@ class GameManagementSystem {
         this.service = window.GameZoneFirebase;
     }
 
+    normalizeDownloadUrl(url) {
+        if (!url || typeof url !== 'string') return '';
+        const trimmed = url.trim();
+        
+        // Firebase Storage URLs - keep as-is, they're already direct download
+        if (trimmed.includes('firebasestorage.googleapis.com')) {
+            if (!trimmed.includes('alt=media')) {
+                const separator = trimmed.includes('?') ? '&' : '?';
+                return `${trimmed}${separator}alt=media`;
+            }
+            return trimmed;
+        }
+        
+        // Local upload references
+        if (trimmed.startsWith('local-upload://')) {
+            return trimmed;
+        }
+        
+        const driveFileIdMatch = trimmed.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+        if (driveFileIdMatch) {
+            return `https://drive.google.com/uc?export=download&id=${driveFileIdMatch[1]}`;
+        }
+        const driveIdQuery = trimmed.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (trimmed.includes('drive.google.com') && driveIdQuery) {
+            return `https://drive.google.com/uc?export=download&id=${driveIdQuery[1]}`;
+        }
+        const driveOpenMatch = trimmed.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+        if (driveOpenMatch) {
+            return `https://drive.google.com/uc?export=download&id=${driveOpenMatch[1]}`;
+        }
+        if (trimmed.includes('dropbox.com')) {
+            if (trimmed.includes('?dl=0')) {
+                return trimmed.replace('?dl=0', '?dl=1');
+            }
+            if (!trimmed.includes('?dl=1')) {
+                return `${trimmed}${trimmed.includes('?') ? '&' : '?'}dl=1`;
+            }
+        }
+        return trimmed;
+    }
+
     /**
      * Add a new game to the platform
      */
@@ -27,7 +68,7 @@ class GameManagementSystem {
             author: gameData.author || 'Unknown',
             isOnline: gameData.isOnline || false,
             isDownloadable: gameData.isDownloadable || false,
-            downloadUrl: gameData.downloadUrl || '',
+            downloadUrl: this.normalizeDownloadUrl(gameData.downloadUrl || ''),
             downloadSize: gameData.downloadSize || 0,
             imageUrl: gameData.imageUrl || '',
             rating: 0,

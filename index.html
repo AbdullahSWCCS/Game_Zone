@@ -58,6 +58,11 @@
                 <a href="#" class="nav-item" data-view="uploads">
                     <span class="nav-icon">UP</span> Upload Game
                 </a>
+                <a href="#" class="nav-item" data-view="downloads" id="downloadsNavItem">
+                    <span class="nav-icon">⬇️</span>
+                    Downloads
+                    <span class="nav-badge" id="downloadsBadge" style="display:none">0</span>
+                </a>
                 <a href="#" class="nav-item" data-view="friends">
                     <span class="nav-icon">FR</span> Friends
                 </a>
@@ -190,6 +195,30 @@
                     <div class="workspace-card">
                         <h3>Community Uploaded Games</h3>
                         <div class="uploaded-games-list" id="uploadedGamesList"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Downloads Section -->
+            <section class="workspace-section" id="downloadsSection" style="display: none;">
+                <div class="section-header">
+                    <h2>Download Manager</h2>
+                    <span class="helper-text">Queue downloads, track progress, and review completed game files.</span>
+                </div>
+                <div class="download-manager-grid">
+                    <div class="workspace-card download-manager-card">
+                        <div class="download-manager-card-header">
+                            <h3>Active Downloads</h3>
+                            <button id="startAllDownloadsBtn" type="button" class="secondary-action small-btn">Start all</button>
+                        </div>
+                        <div id="activeDownloadsList" class="download-list"></div>
+                    </div>
+                    <div class="workspace-card download-manager-card">
+                        <div class="download-manager-card-header">
+                            <h3>Completed Downloads</h3>
+                            <button id="clearCompletedDownloadsBtn" type="button" class="secondary-action small-btn">Clear completed</button>
+                        </div>
+                        <div id="completedDownloadsList" class="download-list"></div>
                     </div>
                 </div>
             </section>
@@ -331,6 +360,7 @@
                     <span id="playTimer">00:00</span>
                 </div>
                 <div class="game-toolbar-actions">
+                    <button id="downloadGameBtn" type="button" style="display:none; margin-right: 10px;">Download</button>
                     <button id="levelCompleteBtn" type="button">Level complete</button>
                     <span class="close-btn">&times;</span>
                 </div>
